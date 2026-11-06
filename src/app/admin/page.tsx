@@ -2,10 +2,11 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
+import ClientsTab from './ClientsTab'
 
 type UploadType = "single" | "before-after";
 type UploadState = "idle" | "uploading" | "success" | "error";
-type AdminTab = "upload" | "reviews";
+type AdminTab = 'upload' | 'reviews' | 'clients';
 
 interface FilePreview {
   file: File;
@@ -423,42 +424,43 @@ function ReviewsTab() {
 
 // ─── Glavna admin stranica ──────────────────────────────────
 
+const TABS: { id: AdminTab; label: string }[] = [
+  { id: 'upload', label: '🖼️ Slike' },
+  { id: 'reviews', label: '💬 Recenzije' },
+  { id: 'clients', label: '❄️ Klijenti' },
+]
+
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<AdminTab>("upload");
+  const [activeTab, setActiveTab] = useState<AdminTab>('upload')
 
   return (
     <div className="min-h-screen bg-[#0D1B2A] px-4 py-12">
-      <div className="max-w-xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="mb-10 flex items-center justify-between">
           <div>
-            <p className="text-[#E63946] text-xs font-medium tracking-widest uppercase mb-1">
-              Admin
-            </p>
+            <p className="text-[#E63946] text-xs font-medium tracking-widest uppercase mb-1">Admin</p>
             <h1 className="text-white text-3xl font-display">Upravljanje</h1>
           </div>
-          <a
-            href="/"
-            className="text-white/40 hover:text-white text-sm transition"
-          >
-            ← Sajt
-          </a>
+          <a href="/" className="text-white/40 hover:text-white text-sm transition">← Sajt</a>
         </div>
 
         <div className="flex gap-2 mb-8 bg-[#1D3557]/40 p-1 rounded-xl">
-          {(["upload", "reviews"] as AdminTab[]).map((t) => (
+          {TABS.map((t) => (
             <button
-              key={t}
-              onClick={() => setActiveTab(t)}
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
               className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition
-                ${activeTab === t ? "bg-[#1D3557] text-white" : "text-white/50 hover:text-white"}`}
+                ${activeTab === t.id ? 'bg-[#1D3557] text-white' : 'text-white/50 hover:text-white'}`}
             >
-              {t === "upload" ? "🖼️ Slike" : "💬 Recenzije"}
+              {t.label}
             </button>
           ))}
         </div>
 
-        {activeTab === "upload" ? <UploadTab /> : <ReviewsTab />}
+        {activeTab === 'upload' && <UploadTab />}
+        {activeTab === 'reviews' && <ReviewsTab />}
+        {activeTab === 'clients' && <ClientsTab />}
       </div>
     </div>
-  );
+  )
 }
