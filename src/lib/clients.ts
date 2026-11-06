@@ -29,7 +29,8 @@ export interface ExpiringWarranty {
   phone: string | null
   email: string | null
   unit: string | null
-  warrantyExpiresAt: string
+  warrantyPaid: boolean
+  dueDate: string
   daysLeft: number
 }
 
@@ -219,6 +220,9 @@ export async function deleteService(id: number): Promise<void> {
 }
 
 // Plaćena garancija, još nije kontaktiran, ističe u narednih 10 dana (ili je već istekla)
+const REMINDER_DAYS = 10          // koliko dana unaprijed, za sve servise
+const OVERDUE_LOOKBACK_DAYS = 30  // koliko dugo nakon godišnjice se još prikazuje
+
 export async function getExpiringWarranties(): Promise<ExpiringWarranty[]> {
   await ensureTables()
   const sql = getDb()
@@ -231,14 +235,19 @@ export async function getExpiringWarranties(): Promise<ExpiringWarranty[]> {
       c.phone,
       c.email,
       s.unit_description AS unit,
-      s.warranty_expires_at::text AS "warrantyExpiresAt",
-      (s.warranty_expires_at - CURRENT_DATE) AS "daysLeft"
-    FROM services s
+      s.warranty_paid AS "warrantyPaid",
+      s.due::text AS "dueDate",
+      (s.due - CURRENT_DATE) AS "daysLeft"
+    FROM (
+      SELECT *,
+        COALESCE(warranty_expires_at, (service_date + INTERVAL '1 year')::date) AS due
+      FROM services
+    ) s
     JOIN clients c ON c.id = s.client_id
-    WHERE s.warranty_paid = TRUE
-      AND s.renewal_contacted = FALSE
-      AND s.warranty_expires_at <= CURRENT_DATE + 10
-    ORDER BY s.warranty_expires_at
+    WHERE s.renewal_contacted = FALSE
+      AND s.due >= CURRENT_DATE - ${OVERDUE_LOOKBACK_DAYS}::int
+      AND s.due <= CURRENT_DATE + ${REMINDER_DAYS}::int
+    ORDER BY s.due
   `
   return rows as unknown as ExpiringWarranty[]
 }
